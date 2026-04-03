@@ -3,9 +3,10 @@ const { IncomingForm } = require('formidable');
 const fs = require('fs');
 
 // Disable default body parsing for file uploads
-export const config = {
+const config = {
   api: { bodyParser: false }
 };
+module.exports.config = config;
 
 function parseForm(req) {
   return new Promise((resolve, reject) => {
