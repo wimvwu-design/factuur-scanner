@@ -131,11 +131,11 @@
       </div>
     </section>
 
-    <!-- Step 3: QR Code -->
+    <!-- Step 3: Betalen -->
     <section id="step-qr" class="step" style="display:none;">
       <div class="step-header">
         <span class="step-number">3</span>
-        <h2>Betalen</h2>
+        <h2>Betalen via Easy Banking</h2>
       </div>
 
       <div class="qr-container">
@@ -158,39 +158,57 @@
           </div>
         </div>
 
-        <div class="qr-code-wrapper">
-          <img id="qrImage" alt="EPC QR-code voor betaling">
-          <p class="qr-label">EPC QR-code</p>
-        </div>
+        <!-- Stap-voor-stap kopieer flow -->
+        <div class="transfer-guide">
+          <p class="transfer-intro">Kopieer elk veld en plak het in Easy Banking</p>
 
-        <div class="qr-instructions">
-          <h3>Optie 1: Via QR-code</h3>
-          <ol>
-            <li>Tik op <strong>"QR-code delen/opslaan"</strong> hieronder</li>
-            <li>Kies <strong>"Bewaar afbeelding"</strong> (of deel naar Easy Banking)</li>
-            <li>Open de <strong>Easy Banking</strong> app</li>
-            <li>Tik op <strong>QR-code</strong> icoon (rechtsboven op startscherm)</li>
-            <li>Tik op het <strong>galerij-icoon</strong> (linksonder in de camera)</li>
-            <li>Selecteer de opgeslagen QR-code</li>
-            <li>Bevestig de betaling</li>
-          </ol>
-        </div>
+          <div class="transfer-step" id="transferStep1">
+            <div class="transfer-step-header">
+              <span class="transfer-step-num">1</span>
+              <span class="transfer-step-label">IBAN kopiëren</span>
+            </div>
+            <div class="transfer-step-body">
+              <span id="copyIban" class="transfer-value"></span>
+              <button class="btn btn-primary btn-copy-big" data-field="copyIban" data-next="transferStep2">
+                Kopieer IBAN
+              </button>
+            </div>
+          </div>
 
-        <div class="qr-instructions qr-instructions-alt">
-          <h3>Optie 2: Manueel overschrijven</h3>
-          <ol>
-            <li>Tik op <strong>"Gegevens kopiëren"</strong> hieronder</li>
-            <li>Open <strong>Easy Banking</strong> → Betalen → Overschrijving</li>
-            <li>Plak de gegevens (IBAN, bedrag, mededeling)</li>
-          </ol>
+          <div class="transfer-step" id="transferStep2">
+            <div class="transfer-step-header">
+              <span class="transfer-step-num">2</span>
+              <span class="transfer-step-label">Bedrag kopiëren</span>
+            </div>
+            <div class="transfer-step-body">
+              <span id="copyBedrag" class="transfer-value"></span>
+              <button class="btn btn-primary btn-copy-big" data-field="copyBedrag" data-next="transferStep3">
+                Kopieer bedrag
+              </button>
+            </div>
+          </div>
+
+          <div class="transfer-step" id="transferStep3">
+            <div class="transfer-step-header">
+              <span class="transfer-step-num">3</span>
+              <span class="transfer-step-label">Mededeling kopiëren</span>
+            </div>
+            <div class="transfer-step-body">
+              <span id="copyMededeling" class="transfer-value"></span>
+              <button class="btn btn-primary btn-copy-big" data-field="copyMededeling">
+                Kopieer mededeling
+              </button>
+            </div>
+          </div>
+
+          <div class="transfer-tip">
+            Tip: Open <strong>Easy Banking</strong> → <strong>Betalen</strong> → <strong>Nieuwe overschrijving</strong> en plak elk veld na het kopiëren. Wissel tussen apps via de taakbalk.
+          </div>
         </div>
 
         <div class="button-stack">
-          <button class="btn btn-primary btn-full" id="saveQrBtn">
-            📤 QR-code delen / opslaan
-          </button>
           <button class="btn btn-primary btn-full" id="copyDetailsBtn">
-            📋 Gegevens kopiëren
+            📋 Alles kopiëren in één keer
           </button>
           <button class="btn btn-secondary btn-full" id="newScanBtn">
             📄 Nieuwe factuur scannen
@@ -198,25 +216,18 @@
         </div>
       </div>
 
-      <!-- Manual entry shortcut -->
+      <!-- QR-code als extra optie -->
       <details class="manual-details">
-        <summary>Individuele velden kopiëren</summary>
-        <div class="manual-copy-fields">
-          <div class="copy-field">
-            <span class="copy-label">IBAN:</span>
-            <span id="copyIban" class="copy-value"></span>
-            <button class="btn-copy" data-copy="copyIban">📋</button>
+        <summary>QR-code tonen (voor 2e toestel of andere bankapp)</summary>
+        <div class="qr-fallback">
+          <div class="qr-code-wrapper">
+            <img id="qrImage" alt="EPC QR-code voor betaling">
+            <p class="qr-label">EPC QR-code</p>
           </div>
-          <div class="copy-field">
-            <span class="copy-label">Bedrag:</span>
-            <span id="copyBedrag" class="copy-value"></span>
-            <button class="btn-copy" data-copy="copyBedrag">📋</button>
-          </div>
-          <div class="copy-field">
-            <span class="copy-label">Mededeling:</span>
-            <span id="copyMededeling" class="copy-value"></span>
-            <button class="btn-copy" data-copy="copyMededeling">📋</button>
-          </div>
+          <button class="btn btn-secondary btn-full" id="saveQrBtn">
+            📤 QR-code delen / opslaan
+          </button>
+          <p class="qr-fallback-hint">Scan deze code met een 2e toestel of een bankapp die QR uit galerij ondersteunt.</p>
         </div>
       </details>
     </section>

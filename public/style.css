@@ -310,6 +310,101 @@ body {
   flex: 1;
 }
 
+/* Transfer Guide */
+.transfer-guide {
+  margin-bottom: 20px;
+}
+
+.transfer-intro {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.transfer-step {
+  background: var(--bg);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.transfer-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: white;
+}
+
+.transfer-step-num {
+  background: var(--primary);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.transfer-step-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.transfer-step-body {
+  padding: 10px 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transfer-value {
+  flex: 1;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.btn-copy-big {
+  padding: 10px 16px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-copy-big.copied {
+  background: var(--accent) !important;
+}
+
+.transfer-tip {
+  background: #fff8e1;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5d4e37;
+  margin-top: 12px;
+}
+
+.qr-fallback {
+  padding: 16px 0;
+  text-align: center;
+}
+
+.qr-fallback-hint {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 12px;
+}
+
 /* QR Code */
 .qr-container {
   text-align: center;

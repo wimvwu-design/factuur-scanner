@@ -299,13 +299,27 @@ document.getElementById('copyDetailsBtn').addEventListener('click', () => {
   });
 });
 
-// Individual copy buttons
-document.querySelectorAll('.btn-copy').forEach(btn => {
+// Step-by-step copy buttons
+document.querySelectorAll('.btn-copy-big').forEach(btn => {
   btn.addEventListener('click', () => {
-    const targetId = btn.getAttribute('data-copy');
-    const text = document.getElementById(targetId).textContent;
+    const fieldId = btn.getAttribute('data-field');
+    let text = document.getElementById(fieldId).textContent;
+    // Clean up: remove euro sign and spaces for bedrag
+    if (fieldId === 'copyBedrag') {
+      text = text.replace('€', '').trim();
+    }
     navigator.clipboard.writeText(text).then(() => {
-      showToast('Gekopieerd!');
+      // Visual feedback
+      const originalText = btn.textContent;
+      btn.textContent = 'Gekopieerd!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
+      }, 2000);
+      showToast(`${text} gekopieerd!`);
+    }).catch(() => {
+      showToast('Kopiëren mislukt');
     });
   });
 });
