@@ -1,0 +1,301 @@
+// DOM elements
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const cameraInput = document.getElementById('cameraInput');
+const cameraBtn = document.getElementById('cameraBtn');
+const preview = document.getElementById('preview');
+const previewImage = document.getElementById('previewImage');
+const removeFile = document.getElementById('removeFile');
+const scanBtn = document.getElementById('scanBtn');
+const uploadError = document.getElementById('uploadError');
+
+const stepUpload = document.getElementById('step-upload');
+const stepReview = document.getElementById('step-review');
+const stepQr = document.getElementById('step-qr');
+const loading = document.getElementById('loading');
+
+let selectedFile = null;
+
+// --- Step 1: File Upload ---
+
+// Drag & drop
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+// File input
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+// Camera
+cameraBtn.addEventListener('click', () => {
+  cameraInput.click();
+});
+
+cameraInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+// Remove file
+removeFile.addEventListener('click', () => {
+  selectedFile = null;
+  preview.style.display = 'none';
+  scanBtn.style.display = 'none';
+  dropZone.style.display = '';
+  uploadError.style.display = 'none';
+  fileInput.value = '';
+  cameraInput.value = '';
+});
+
+function handleFile(file) {
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showError('Bestand is te groot (max 10MB)');
+    return;
+  }
+
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+  if (!allowed.includes(file.type)) {
+    showError('Ongeldig bestandstype. Upload een afbeelding of PDF.');
+    return;
+  }
+
+  selectedFile = file;
+  uploadError.style.display = 'none';
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImage.src = e.target.result;
+      preview.style.display = '';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // PDF - show placeholder
+    previewImage.src = 'data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">' +
+      '<rect width="200" height="200" fill="#f5f7fa" rx="8"/>' +
+      '<text x="100" y="90" text-anchor="middle" font-size="48">📄</text>' +
+      '<text x="100" y="130" text-anchor="middle" font-size="14" fill="#7f8c8d">' + file.name + '</text>' +
+      '</svg>'
+    );
+    preview.style.display = '';
+  }
+
+  dropZone.style.display = 'none';
+  scanBtn.style.display = '';
+}
+
+function showError(msg) {
+  uploadError.textContent = msg;
+  uploadError.style.display = '';
+}
+
+// Manual entry button
+document.getElementById('manualBtn').addEventListener('click', () => {
+  // Clear form and go straight to review step
+  document.getElementById('naam').value = '';
+  document.getElementById('iban').value = '';
+  document.getElementById('bic').value = '';
+  document.getElementById('bedrag').value = '';
+  document.getElementById('mededeling').value = '';
+  document.getElementById('vervaldatum').value = '';
+  document.getElementById('factuur_nummer').value = '';
+  stepUpload.style.display = 'none';
+  stepReview.style.display = '';
+});
+
+// --- Scan Button ---
+scanBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+
+  stepUpload.style.display = 'none';
+  loading.style.display = '';
+
+  try {
+    const formData = new FormData();
+    formData.append('invoice', selectedFile);
+
+    const response = await fetch('/api/extract', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Fout bij het scannen');
+    }
+
+    populateForm(result.data);
+    loading.style.display = 'none';
+    stepReview.style.display = '';
+  } catch (error) {
+    loading.style.display = 'none';
+    stepUpload.style.display = '';
+    showError(error.message || 'Er ging iets mis bij het scannen. Probeer opnieuw.');
+  }
+});
+
+// --- Step 2: Review & Edit ---
+
+function populateForm(data) {
+  document.getElementById('naam').value = data.naam || '';
+  document.getElementById('iban').value = data.iban || '';
+  document.getElementById('bic').value = data.bic || '';
+  document.getElementById('bedrag').value = data.bedrag || '';
+  document.getElementById('mededeling').value = data.mededeling || '';
+  document.getElementById('vervaldatum').value = data.vervaldatum || '';
+  document.getElementById('factuur_nummer').value = data.factuur_nummer || '';
+
+  // Set mededeling type
+  const type = data.mededeling_type || 'gestructureerd';
+  const radio = document.querySelector(`input[name="mededeling_type"][value="${type}"]`);
+  if (radio) radio.checked = true;
+  updateMededelingHint(type);
+}
+
+// Mededeling type toggle
+document.querySelectorAll('input[name="mededeling_type"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    updateMededelingHint(e.target.value);
+  });
+});
+
+function updateMededelingHint(type) {
+  const hint = document.getElementById('mededelingHint');
+  const input = document.getElementById('mededeling');
+  if (type === 'gestructureerd') {
+    hint.textContent = 'Formaat: +++###/####/#####+++';
+    input.placeholder = '+++123/4567/89012+++';
+  } else {
+    hint.textContent = 'Vrije tekst als mededeling';
+    input.placeholder = 'Factuur 2024-001';
+  }
+}
+
+// Back button
+document.getElementById('backBtn').addEventListener('click', () => {
+  stepReview.style.display = 'none';
+  stepUpload.style.display = '';
+});
+
+// --- Step 3: Generate QR ---
+
+document.getElementById('generateQrBtn').addEventListener('click', async () => {
+  const naam = document.getElementById('naam').value.trim();
+  const iban = document.getElementById('iban').value.trim();
+  const bic = document.getElementById('bic').value.trim();
+  const bedrag = document.getElementById('bedrag').value.trim();
+  const mededeling = document.getElementById('mededeling').value.trim();
+  const mededeling_type = document.querySelector('input[name="mededeling_type"]:checked').value;
+
+  // Validation
+  if (!naam) { showToast('Vul de naam van de begunstigde in'); return; }
+  if (!iban) { showToast('Vul het IBAN rekeningnummer in'); return; }
+  if (!bedrag || parseFloat(bedrag) <= 0) { showToast('Vul een geldig bedrag in'); return; }
+
+  try {
+    const response = await fetch('/api/qrcode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ naam, iban, bic, bedrag, mededeling, mededeling_type })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    // Show QR step
+    document.getElementById('qrImage').src = result.qrcode;
+    document.getElementById('summaryNaam').textContent = naam;
+    document.getElementById('summaryIban').textContent = iban;
+    document.getElementById('summaryBedrag').textContent = `€ ${parseFloat(bedrag).toFixed(2)}`;
+    document.getElementById('summaryMededeling').textContent = mededeling || '-';
+
+    // Copy fields
+    document.getElementById('copyIban').textContent = iban;
+    document.getElementById('copyBedrag').textContent = `€ ${parseFloat(bedrag).toFixed(2)}`;
+    document.getElementById('copyMededeling').textContent = mededeling || '-';
+
+    stepReview.style.display = 'none';
+    stepQr.style.display = '';
+  } catch (error) {
+    showToast(error.message || 'Fout bij QR generatie');
+  }
+});
+
+// Save QR code
+document.getElementById('saveQrBtn').addEventListener('click', () => {
+  const qrImage = document.getElementById('qrImage');
+  const link = document.createElement('a');
+  link.download = 'factuur-qr.png';
+  link.href = qrImage.src;
+  link.click();
+  showToast('QR-code opgeslagen!');
+});
+
+// Copy all details
+document.getElementById('copyDetailsBtn').addEventListener('click', () => {
+  const naam = document.getElementById('summaryNaam').textContent;
+  const iban = document.getElementById('summaryIban').textContent;
+  const bedrag = document.getElementById('summaryBedrag').textContent;
+  const mededeling = document.getElementById('summaryMededeling').textContent;
+
+  const text = `Begunstigde: ${naam}\nIBAN: ${iban}\nBedrag: ${bedrag}\nMededeling: ${mededeling}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Gegevens gekopieerd!');
+  }).catch(() => {
+    showToast('Kopiëren mislukt');
+  });
+});
+
+// Individual copy buttons
+document.querySelectorAll('.btn-copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.getAttribute('data-copy');
+    const text = document.getElementById(targetId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Gekopieerd!');
+    });
+  });
+});
+
+// New scan
+document.getElementById('newScanBtn').addEventListener('click', () => {
+  selectedFile = null;
+  preview.style.display = 'none';
+  scanBtn.style.display = 'none';
+  dropZone.style.display = '';
+  uploadError.style.display = 'none';
+  fileInput.value = '';
+  cameraInput.value = '';
+  stepQr.style.display = 'none';
+  stepUpload.style.display = '';
+});
+
+// --- Toast ---
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.display = '';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 2500);
+}

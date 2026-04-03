@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a5276">
+  <title>Factuur Scanner</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <h1>Factuur Scanner</h1>
+      <p class="subtitle">Scan & betaal in enkele seconden</p>
+    </header>
+
+    <!-- Step 1: Upload -->
+    <section id="step-upload" class="step active">
+      <div class="step-header">
+        <span class="step-number">1</span>
+        <h2>Factuur uploaden</h2>
+      </div>
+      <div class="upload-area" id="dropZone">
+        <div class="upload-icon">📄</div>
+        <p>Sleep een factuur hierheen of</p>
+        <div class="upload-buttons">
+          <label class="btn btn-primary" for="fileInput">
+            Bestand kiezen
+          </label>
+          <button class="btn btn-secondary" id="cameraBtn">
+            📸 Foto nemen
+          </button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*,application/pdf" hidden>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+        <p class="upload-hint">JPG, PNG, WebP of PDF (max 10MB)</p>
+      </div>
+      <div id="preview" class="preview" style="display:none;">
+        <img id="previewImage" alt="Factuur preview">
+        <button class="btn btn-small btn-danger" id="removeFile">✕ Verwijderen</button>
+      </div>
+      <div id="uploadError" class="error" style="display:none;"></div>
+      <button class="btn btn-primary btn-full" id="scanBtn" style="display:none;">
+        🔍 Factuur scannen
+      </button>
+      <div class="divider">
+        <span>of</span>
+      </div>
+      <button class="btn btn-secondary btn-full" id="manualBtn">
+        ✏️ Manueel invullen
+      </button>
+    </section>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      <p>Factuur wordt geanalyseerd...</p>
+      <p class="loading-sub">Dit kan enkele seconden duren</p>
+    </div>
+
+    <!-- Step 2: Review & Edit -->
+    <section id="step-review" class="step" style="display:none;">
+      <div class="step-header">
+        <span class="step-number">2</span>
+        <h2>Gegevens controleren</h2>
+      </div>
+      <p class="edit-hint">Controleer en pas aan indien nodig</p>
+
+      <form id="invoiceForm">
+        <div class="form-group">
+          <label for="naam">Begunstigde (naam)</label>
+          <input type="text" id="naam" placeholder="Naam van het bedrijf">
+        </div>
+
+        <div class="form-group">
+          <label for="iban">IBAN rekeningnummer</label>
+          <input type="text" id="iban" placeholder="BE## #### #### ####"
+                 pattern="[A-Z]{2}\d{2}\s?\d{4}\s?\d{4}\s?\d{4}">
+          <span class="field-hint">Belgisch formaat: BE## #### #### ####</span>
+        </div>
+
+        <div class="form-group">
+          <label for="bic">BIC/SWIFT (optioneel)</label>
+          <input type="text" id="bic" placeholder="bijv. GEBABEBB">
+        </div>
+
+        <div class="form-group">
+          <label for="bedrag">Bedrag (EUR)</label>
+          <input type="number" id="bedrag" step="0.01" min="0.01" placeholder="0.00">
+        </div>
+
+        <div class="form-group">
+          <label>Type mededeling</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="mededeling_type" value="gestructureerd" checked>
+              Gestructureerd (+++###/####/#####+++)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="mededeling_type" value="vrij">
+              Vrije mededeling
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mededeling">Mededeling</label>
+          <input type="text" id="mededeling" placeholder="+++123/4567/89012+++">
+          <span class="field-hint" id="mededelingHint">Formaat: +++###/####/#####+++</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vervaldatum">Vervaldatum</label>
+            <input type="text" id="vervaldatum" placeholder="DD/MM/YYYY">
+          </div>
+          <div class="form-group">
+            <label for="factuur_nummer">Factuurnummer</label>
+            <input type="text" id="factuur_nummer" placeholder="Optioneel">
+          </div>
+        </div>
+      </form>
+
+      <div class="button-row">
+        <button class="btn btn-secondary" id="backBtn">← Terug</button>
+        <button class="btn btn-primary" id="generateQrBtn">QR-code genereren →</button>
+      </div>
+    </section>
+
+    <!-- Step 3: QR Code -->
+    <section id="step-qr" class="step" style="display:none;">
+      <div class="step-header">
+        <span class="step-number">3</span>
+        <h2>Betalen</h2>
+      </div>
+
+      <div class="qr-container">
+        <div class="qr-summary">
+          <div class="summary-row">
+            <span class="summary-label">Aan:</span>
+            <span id="summaryNaam" class="summary-value"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">IBAN:</span>
+            <span id="summaryIban" class="summary-value"></span>
+          </div>
+          <div class="summary-row summary-amount">
+            <span class="summary-label">Bedrag:</span>
+            <span id="summaryBedrag" class="summary-value"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Mededeling:</span>
+            <span id="summaryMededeling" class="summary-value"></span>
+          </div>
+        </div>
+
+        <div class="qr-code-wrapper">
+          <img id="qrImage" alt="EPC QR-code voor betaling">
+          <p class="qr-label">EPC QR-code</p>
+        </div>
+
+        <div class="qr-instructions">
+          <h3>Hoe betalen?</h3>
+          <ol>
+            <li><strong>Bewaar de QR-code</strong> in je galerij (knop hieronder)</li>
+            <li>Open <strong>Easy Banking</strong> app</li>
+            <li>Ga naar <strong>Betalen → QR-code scannen</strong></li>
+            <li>Kies de QR-code <strong>uit je galerij</strong></li>
+            <li>Bevestig de betaling</li>
+          </ol>
+        </div>
+
+        <div class="button-stack">
+          <button class="btn btn-primary btn-full" id="saveQrBtn">
+            💾 QR-code opslaan
+          </button>
+          <button class="btn btn-secondary btn-full" id="copyDetailsBtn">
+            📋 Gegevens kopiëren
+          </button>
+          <button class="btn btn-secondary btn-full" id="newScanBtn">
+            📄 Nieuwe factuur scannen
+          </button>
+        </div>
+      </div>
+
+      <!-- Manual entry shortcut -->
+      <details class="manual-details">
+        <summary>Gegevens voor manuele invoer</summary>
+        <div class="manual-copy-fields">
+          <div class="copy-field">
+            <span class="copy-label">IBAN:</span>
+            <span id="copyIban" class="copy-value"></span>
+            <button class="btn-copy" data-copy="copyIban">📋</button>
+          </div>
+          <div class="copy-field">
+            <span class="copy-label">Bedrag:</span>
+            <span id="copyBedrag" class="copy-value"></span>
+            <button class="btn-copy" data-copy="copyBedrag">📋</button>
+          </div>
+          <div class="copy-field">
+            <span class="copy-label">Mededeling:</span>
+            <span id="copyMededeling" class="copy-value"></span>
+            <button class="btn-copy" data-copy="copyMededeling">📋</button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast" style="display:none;"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
