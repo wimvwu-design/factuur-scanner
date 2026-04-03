@@ -375,7 +375,15 @@ body {
   background: #eaf2e3;
   border-radius: 8px;
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+}
+
+.qr-instructions-alt {
+  background: #e8f0fa;
+}
+
+.qr-instructions-alt h3 {
+  color: var(--primary) !important;
 }
 
 .qr-instructions h3 {

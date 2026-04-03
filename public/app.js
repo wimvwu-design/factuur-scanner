@@ -240,14 +240,47 @@ document.getElementById('generateQrBtn').addEventListener('click', async () => {
   }
 });
 
-// Save QR code
-document.getElementById('saveQrBtn').addEventListener('click', () => {
+// Save/Share QR code
+document.getElementById('saveQrBtn').addEventListener('click', async () => {
   const qrImage = document.getElementById('qrImage');
-  const link = document.createElement('a');
-  link.download = 'factuur-qr.png';
-  link.href = qrImage.src;
-  link.click();
-  showToast('QR-code opgeslagen!');
+
+  try {
+    // Convert data URL to blob
+    const response = await fetch(qrImage.src);
+    const blob = await response.blob();
+    const file = new File([blob], 'factuur-qr.png', { type: 'image/png' });
+
+    // Try Web Share API first (best for mobile - saves to gallery or shares directly)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'Factuur QR-code',
+        text: 'EPC QR-code voor betaling',
+        files: [file]
+      });
+      showToast('QR-code gedeeld!');
+      return;
+    }
+  } catch (shareError) {
+    // Share was cancelled or failed, fall through to download
+    if (shareError.name === 'AbortError') return;
+  }
+
+  // Fallback: download via blob URL (works better than data URL on mobile)
+  try {
+    const response = await fetch(qrImage.src);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = 'factuur-qr.png';
+    link.href = blobUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+    showToast('QR-code opgeslagen!');
+  } catch (dlError) {
+    showToast('Opslaan mislukt. Maak een screenshot.');
+  }
 });
 
 // Copy all details
