@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a5276">
+  <title>Factuur betalen - QR-code</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      color: #2c3e50;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 600px;
+    }
+    h1 {
+      color: #1a5276;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #7f8c8d;
+      margin-bottom: 32px;
+      font-size: 16px;
+    }
+    .summary {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: left;
+      display: inline-block;
+      min-width: 320px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 16px;
+    }
+    .summary-row + .summary-row {
+      border-top: 1px solid #eee;
+    }
+    .summary-label { color: #7f8c8d; }
+    .summary-value { font-weight: 600; }
+    .summary-amount .summary-value {
+      color: #1a5276;
+      font-size: 22px;
+    }
+    .qr-wrapper {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      display: inline-block;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    .qr-wrapper img {
+      width: 350px;
+      height: 350px;
+    }
+    .instruction {
+      background: #eaf2e3;
+      border-radius: 10px;
+      padding: 16px 24px;
+      font-size: 18px;
+      line-height: 1.6;
+      display: inline-block;
+    }
+    .instruction strong {
+      color: #27ae60;
+    }
+    .error {
+      color: #e74c3c;
+      font-size: 18px;
+    }
+    .loading {
+      font-size: 18px;
+      color: #7f8c8d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Factuur Scanner</h1>
+    <p class="subtitle">Scan deze QR-code met Easy Banking</p>
+
+    <div id="content">
+      <p class="loading">QR-code laden...</p>
+    </div>
+  </div>
+
+  <script>
+    async function loadPayment() {
+      const content = document.getElementById('content');
+
+      try {
+        // Read payment data from URL hash (base64 encoded JSON)
+        const hash = window.location.hash.substring(1);
+        if (!hash) {
+          content.innerHTML = '<p class="error">Geen betalingsgegevens gevonden.<br>Open deze link vanuit de Factuur Scanner app.</p>';
+          return;
+        }
+
+        const data = JSON.parse(atob(hash));
+        const { naam, iban, bic, bedrag, mededeling, mededeling_type } = data;
+
+        // Generate QR code via API
+        const response = await fetch('/api/qrcode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ naam, iban, bic, bedrag, mededeling, mededeling_type })
+        });
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error);
+
+        content.innerHTML = `
+          <div class="summary">
+            <div class="summary-row">
+              <span class="summary-label">Aan:</span>
+              <span class="summary-value">${naam}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">IBAN:</span>
+              <span class="summary-value">${iban}</span>
+            </div>
+            <div class="summary-row summary-amount">
+              <span class="summary-label">Bedrag:</span>
+              <span class="summary-value">&euro; ${parseFloat(bedrag).toFixed(2)}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Mededeling:</span>
+              <span class="summary-value">${mededeling || '-'}</span>
+            </div>
+          </div>
+
+          <div class="qr-wrapper">
+            <img src="${result.qrcode}" alt="EPC QR-code">
+          </div>
+
+          <div class="instruction">
+            Open <strong>Easy Banking</strong> op je GSM<br>
+            en scan deze QR-code van je scherm
+          </div>
+        `;
+      } catch (e) {
+        content.innerHTML = `<p class="error">Fout: ${e.message}</p>`;
+      }
+    }
+
+    loadPayment();
+  </script>
+</body>
+</html>

@@ -594,6 +594,53 @@ body {
   }
 }
 
+/* Done step */
+.done-check {
+  background: #27ae60 !important;
+  font-size: 16px !important;
+}
+
+.done-container {
+  text-align: center;
+}
+
+.done-summary {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.done-message {
+  margin-bottom: 16px;
+}
+
+.done-message p {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.done-hint {
+  font-size: 13px !important;
+  color: var(--text-light);
+}
+
+.done-counter {
+  background: var(--primary);
+  color: white;
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.done-counter span {
+  font-size: 20px;
+}
+
 /* Divider */
 .divider {
   display: flex;

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a5276">
+  <title>Factuur Dashboard - QR-codes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #1a5276;
+      --primary-light: #2980b9;
+      --accent: #27ae60;
+      --danger: #e74c3c;
+      --bg: #f5f7fa;
+      --card-bg: #ffffff;
+      --text: #2c3e50;
+      --text-light: #7f8c8d;
+      --border: #dce1e8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-refresh {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .btn-refresh:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    .btn-done {
+      background: var(--accent);
+      color: white;
+      padding: 12px 24px;
+      font-size: 15px;
+    }
+
+    .btn-done:hover {
+      background: #219a52;
+    }
+
+    .btn-done:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h2 {
+      color: var(--text-light);
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    .instructions {
+      background: #fff8e1;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      line-height: 1.6;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .instructions-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .qr-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .qr-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .qr-card.removing {
+      animation: fadeOut 0.4s ease forwards;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+      }
+    }
+
+    .qr-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .qr-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .qr-card-meta {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .qr-card-body {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      gap: 20px;
+    }
+
+    .qr-card-image {
+      flex-shrink: 0;
+    }
+
+    .qr-card-image img {
+      width: 180px;
+      height: 180px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .qr-card-details {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+
+    .detail-row + .detail-row {
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .detail-label {
+      color: var(--text-light);
+    }
+
+    .detail-value {
+      font-weight: 600;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .detail-amount .detail-value {
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    .qr-card-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+      animation: fadeInUp 0.3s ease;
+      display: none;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .qr-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .qr-card-body {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .detail-row {
+        flex-direction: column;
+        text-align: left;
+      }
+
+      .detail-value {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Factuur Dashboard</h1>
+    <div class="header-right">
+      <span class="badge" id="countBadge">0 facturen</span>
+      <button class="btn btn-refresh" onclick="loadQueue()">Vernieuwen</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="instructions">
+      <span class="instructions-icon">📷</span>
+      <div>
+        <strong>Scan de QR-codes met Easy Banking:</strong>
+        Open de Easy Banking app op je GSM → tik op QR-code → richt de camera op een QR-code hieronder → bevestig de betaling → klik "Verwerkt" om de factuur te verwijderen.
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Facturen laden...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let autoRefreshInterval;
+
+    async function loadQueue() {
+      const content = document.getElementById('content');
+
+      try {
+        const response = await fetch('/api/queue');
+        const result = await response.json();
+
+        if (!result.success) throw new Error(result.error);
+
+        const items = result.items;
+        document.getElementById('countBadge').textContent = `${items.length} facturen`;
+
+        if (items.length === 0) {
+          content.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📭</div>
+              <h2>Geen facturen in de wachtrij</h2>
+              <p>Scan facturen via de Factuur Scanner app op je GSM.<br>Ze verschijnen hier automatisch.</p>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = `<div class="qr-grid">${items.map(item => `
+          <div class="qr-card" id="card-${item.id}">
+            <div class="qr-card-header">
+              <div class="qr-card-title">${escapeHtml(item.naam)}</div>
+              <div class="qr-card-meta">
+                ${item.factuur_nummer ? `Factuur ${escapeHtml(item.factuur_nummer)} · ` : ''}
+                ${formatDate(item.created)}
+                ${item.vervaldatum ? ` · Vervalt ${escapeHtml(item.vervaldatum)}` : ''}
+              </div>
+            </div>
+            <div class="qr-card-body">
+              <div class="qr-card-image">
+                <img src="${item.qrcode}" alt="QR-code ${escapeHtml(item.naam)}">
+              </div>
+              <div class="qr-card-details">
+                <div class="detail-row">
+                  <span class="detail-label">IBAN</span>
+                  <span class="detail-value">${escapeHtml(item.iban)}</span>
+                </div>
+                <div class="detail-row detail-amount">
+                  <span class="detail-label">Bedrag</span>
+                  <span class="detail-value">&euro; ${item.bedrag}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Mededeling</span>
+                  <span class="detail-value">${escapeHtml(item.mededeling || '-')}</span>
+                </div>
+              </div>
+            </div>
+            <div class="qr-card-footer">
+              <button class="btn btn-done" onclick="markDone('${item.id}')">
+                ✅ Verwerkt
+              </button>
+            </div>
+          </div>
+        `).join('')}</div>`;
+      } catch (error) {
+        content.innerHTML = `<div class="empty-state"><p style="color:#e74c3c;">Fout: ${error.message}</p></div>`;
+      }
+    }
+
+    async function markDone(id) {
+      const card = document.getElementById(`card-${id}`);
+      const btn = card.querySelector('.btn-done');
+      btn.disabled = true;
+      btn.textContent = 'Verwijderen...';
+
+      try {
+        const response = await fetch('/api/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'done', id })
+        });
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error);
+
+        card.classList.add('removing');
+        setTimeout(() => {
+          loadQueue();
+          showToast('Factuur verwijderd uit wachtrij');
+        }, 400);
+      } catch (error) {
+        btn.disabled = false;
+        btn.textContent = '✅ Verwerkt';
+        showToast('Fout: ' + error.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = '';
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    // Load on page load
+    loadQueue();
+
+    // Auto-refresh every 10 seconds
+    autoRefreshInterval = setInterval(loadQueue, 10000);
+  </script>
+</body>
+</html>

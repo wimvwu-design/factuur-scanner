@@ -127,19 +127,19 @@
 
       <div class="button-row">
         <button class="btn btn-secondary" id="backBtn">← Terug</button>
-        <button class="btn btn-primary" id="generateQrBtn">QR-code genereren →</button>
+        <button class="btn btn-primary" id="generateQrBtn">Toevoegen aan wachtrij →</button>
       </div>
     </section>
 
-    <!-- Step 3: Betalen -->
-    <section id="step-qr" class="step" style="display:none;">
+    <!-- Step 3: Toegevoegd -->
+    <section id="step-done" class="step" style="display:none;">
       <div class="step-header">
-        <span class="step-number">3</span>
-        <h2>Betalen via Easy Banking</h2>
+        <span class="step-number done-check">✓</span>
+        <h2>Toegevoegd aan wachtrij</h2>
       </div>
 
-      <div class="qr-container">
-        <div class="qr-summary">
+      <div class="done-container">
+        <div class="done-summary">
           <div class="summary-row">
             <span class="summary-label">Aan:</span>
             <span id="summaryNaam" class="summary-value"></span>
@@ -158,78 +158,24 @@
           </div>
         </div>
 
-        <!-- Stap-voor-stap kopieer flow -->
-        <div class="transfer-guide">
-          <p class="transfer-intro">Kopieer elk veld en plak het in Easy Banking</p>
+        <div class="done-message">
+          <p>QR-code staat klaar op het <strong>dashboard</strong>.</p>
+          <p class="done-hint">Open het dashboard op je PC en scan de QR-codes met Easy Banking.</p>
+        </div>
 
-          <div class="transfer-step" id="transferStep1">
-            <div class="transfer-step-header">
-              <span class="transfer-step-num">1</span>
-              <span class="transfer-step-label">IBAN kopiëren</span>
-            </div>
-            <div class="transfer-step-body">
-              <span id="copyIban" class="transfer-value"></span>
-              <button class="btn btn-primary btn-copy-big" data-field="copyIban" data-next="transferStep2">
-                Kopieer IBAN
-              </button>
-            </div>
-          </div>
-
-          <div class="transfer-step" id="transferStep2">
-            <div class="transfer-step-header">
-              <span class="transfer-step-num">2</span>
-              <span class="transfer-step-label">Bedrag kopiëren</span>
-            </div>
-            <div class="transfer-step-body">
-              <span id="copyBedrag" class="transfer-value"></span>
-              <button class="btn btn-primary btn-copy-big" data-field="copyBedrag" data-next="transferStep3">
-                Kopieer bedrag
-              </button>
-            </div>
-          </div>
-
-          <div class="transfer-step" id="transferStep3">
-            <div class="transfer-step-header">
-              <span class="transfer-step-num">3</span>
-              <span class="transfer-step-label">Mededeling kopiëren</span>
-            </div>
-            <div class="transfer-step-body">
-              <span id="copyMededeling" class="transfer-value"></span>
-              <button class="btn btn-primary btn-copy-big" data-field="copyMededeling">
-                Kopieer mededeling
-              </button>
-            </div>
-          </div>
-
-          <div class="transfer-tip">
-            Tip: Open <strong>Easy Banking</strong> → <strong>Betalen</strong> → <strong>Nieuwe overschrijving</strong> en plak elk veld na het kopiëren. Wissel tussen apps via de taakbalk.
-          </div>
+        <div class="done-counter">
+          <span id="queueCount">0</span> facturen in wachtrij
         </div>
 
         <div class="button-stack">
-          <button class="btn btn-primary btn-full" id="copyDetailsBtn">
-            📋 Alles kopiëren in één keer
+          <button class="btn btn-primary btn-full" id="scanNextBtn">
+            📄 Volgende factuur scannen
           </button>
-          <button class="btn btn-secondary btn-full" id="newScanBtn">
-            📄 Nieuwe factuur scannen
-          </button>
+          <a href="/dashboard.html" target="_blank" class="btn btn-secondary btn-full">
+            💻 Dashboard openen
+          </a>
         </div>
       </div>
-
-      <!-- QR-code als extra optie -->
-      <details class="manual-details">
-        <summary>QR-code tonen (voor 2e toestel of andere bankapp)</summary>
-        <div class="qr-fallback">
-          <div class="qr-code-wrapper">
-            <img id="qrImage" alt="EPC QR-code voor betaling">
-            <p class="qr-label">EPC QR-code</p>
-          </div>
-          <button class="btn btn-secondary btn-full" id="saveQrBtn">
-            📤 QR-code delen / opslaan
-          </button>
-          <p class="qr-fallback-hint">Scan deze code met een 2e toestel of een bankapp die QR uit galerij ondersteunt.</p>
-        </div>
-      </details>
     </section>
 
     <!-- Toast notification -->

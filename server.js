@@ -174,6 +174,11 @@ app.post('/api/qrcode', async (req, res) => {
   }
 });
 
+// Queue endpoint - proxy to the serverless function for local dev
+const queueHandler = require('./api/queue');
+app.get('/api/queue', (req, res) => queueHandler(req, res));
+app.post('/api/queue', (req, res) => queueHandler(req, res));
+
 app.listen(PORT, () => {
   console.log(`Factuur Scanner draait op http://localhost:${PORT}`);
 });
