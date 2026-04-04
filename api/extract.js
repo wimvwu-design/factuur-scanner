@@ -47,8 +47,8 @@ module.exports = async function handler(req, res) {
     const mediaType = file.mimetype || file.type;
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
       messages: [
         {
           role: 'user',
@@ -78,12 +78,15 @@ Antwoord in dit exacte JSON formaat:
 }
 
 CRUCIALE INSTRUCTIES VOOR HET IBAN:
-- Het IBAN staat vaak onderaan de factuur, in de footer, in het betalingsoverzicht, of naast "rekeningnummer" / "bankrekeningnummer" / "te betalen op".
+- LEES DE VOLLEDIGE FACTUUR INCLUSIEF ALLE KLEINE TEKST ONDERAAN EN IN DE FOOTER.
+- Het IBAN staat vaak NIET in een apart veld, maar in een lopende zin zoals: "betaling op ons nummer BE## #### #### ####" of "te betalen op rekening BE## #### #### ####" of "IBAN: BE## #### #### ####".
+- Zoek naar elk patroon dat begint met 2 letters gevolgd door 14-16 cijfers (bijv. BE68539007547034 of BE68 5390 0754 7034).
 - Belgische IBANs beginnen met BE en hebben 16 tekens (bijv. BE68 5390 0754 7034).
 - Nederlandse IBANs beginnen met NL en hebben 18 tekens.
 - Het IBAN kan met of zonder spaties geschreven zijn. Geef het terug MET spaties (bijv. BE68 5390 0754 7034).
-- Zoek ook in kleine tekst, voetteksten, en betaalinstructies.
+- Zoek in ALLE tekst op de factuur: betalingsoverzicht, voettekst, kleine lettertjes, adresgegevens van het bedrijf, overschrijvingsformulier.
 - Als er meerdere IBANs staan, kies het IBAN dat bij de betaalinstructie hoort (niet het IBAN van de klant).
+- Als je het IBAN nergens vindt, zoek dan naar termen als "rekeningnummer", "bankrekeningnummer", "op ons nummer", "BNP", "KBC", "ING", "Belfius" gevolgd door een rekeningnummer.
 
 INSTRUCTIES VOOR MEDEDELING:
 - Zoek naar gestructureerde mededeling: 12 cijfers in het formaat +++###/####/#####+++ of ***###/####/#####***.
