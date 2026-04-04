@@ -94,7 +94,7 @@ module.exports = async function handler(req, res) {
 
     // Add new item to queue
     try {
-      const { naam, iban, bic, bedrag, mededeling, mededeling_type, factuur_nummer, vervaldatum } = req.body;
+      const { ontvanger, naam, iban, bic, bedrag, mededeling, mededeling_type, factuur_nummer, vervaldatum } = req.body;
 
       if (!naam || !iban || !bedrag) {
         return res.status(400).json({ error: 'Naam, IBAN en bedrag zijn verplicht' });
@@ -110,6 +110,7 @@ module.exports = async function handler(req, res) {
 
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        ontvanger: ontvanger || '',
         naam,
         iban,
         bic: bic || '',

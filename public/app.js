@@ -100,6 +100,7 @@ function showError(msg) {
 
 // Manual entry button
 document.getElementById('manualBtn').addEventListener('click', () => {
+  document.getElementById('ontvanger').value = '';
   document.getElementById('naam').value = '';
   document.getElementById('iban').value = '';
   document.getElementById('bic').value = '';
@@ -146,6 +147,7 @@ scanBtn.addEventListener('click', async () => {
 // --- Step 2: Review & Edit ---
 
 function populateForm(data) {
+  document.getElementById('ontvanger').value = data.ontvanger || '';
   document.getElementById('naam').value = data.naam || '';
   document.getElementById('iban').value = data.iban || '';
   document.getElementById('bic').value = data.bic || '';
@@ -186,6 +188,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
 // --- Step 3: Add to Queue ---
 
 document.getElementById('generateQrBtn').addEventListener('click', async () => {
+  const ontvanger = document.getElementById('ontvanger').value.trim();
   const naam = document.getElementById('naam').value.trim();
   const iban = document.getElementById('iban').value.trim();
   const bic = document.getElementById('bic').value.trim();
@@ -208,7 +211,7 @@ document.getElementById('generateQrBtn').addEventListener('click', async () => {
     const response = await fetch('/api/queue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ naam, iban, bic, bedrag, mededeling, mededeling_type, factuur_nummer, vervaldatum })
+      body: JSON.stringify({ ontvanger, naam, iban, bic, bedrag, mededeling, mededeling_type, factuur_nummer, vervaldatum })
     });
 
     const result = await response.json();

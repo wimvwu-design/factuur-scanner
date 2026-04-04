@@ -67,7 +67,8 @@ module.exports = async function handler(req, res) {
 
 Antwoord in dit exacte JSON formaat:
 {
-  "naam": "naam van de begunstigde (het bedrijf dat betaald moet worden)",
+  "ontvanger": "aan wie is de factuur gericht (naam van de persoon of het bedrijf dat moet betalen)",
+  "naam": "naam van de afzender/begunstigde (het bedrijf dat betaald moet worden)",
   "iban": "IBAN rekeningnummer",
   "bic": "BIC/SWIFT code (indien zichtbaar, anders leeglaten)",
   "bedrag": "totaal te betalen bedrag als nummer (bijv. 125.50)",
@@ -87,6 +88,11 @@ CRUCIALE INSTRUCTIES VOOR HET IBAN:
 - Zoek in ALLE tekst op de factuur: betalingsoverzicht, voettekst, kleine lettertjes, adresgegevens van het bedrijf, overschrijvingsformulier.
 - Als er meerdere IBANs staan, kies het IBAN dat bij de betaalinstructie hoort (niet het IBAN van de klant).
 - Als je het IBAN nergens vindt, zoek dan naar termen als "rekeningnummer", "bankrekeningnummer", "op ons nummer", "BNP", "KBC", "ING", "Belfius" gevolgd door een rekeningnummer.
+
+INSTRUCTIES VOOR ONTVANGER:
+- De ontvanger is de persoon of het bedrijf AAN WIE de factuur gericht is (de klant die moet betalen).
+- Zoek naar het leveringsadres, "Aan:", "Klant:", "Factuur aan:", of de naam bovenaan de factuur naast het adres.
+- Dit is NIET de afzender/begunstigde, maar de geadresseerde.
 
 INSTRUCTIES VOOR MEDEDELING:
 - Zoek naar gestructureerde mededeling: 12 cijfers in het formaat +++###/####/#####+++ of ***###/####/#####***.
