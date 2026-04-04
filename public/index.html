@@ -57,6 +57,20 @@
       <button class="btn btn-primary btn-full" id="scanBtn" style="display:none;">
         🔍 Factuur scannen
       </button>
+      <!-- Bulk queue: collect files before processing -->
+      <div id="bulkQueueSection" style="display:none;">
+        <div class="bulk-queue-header">
+          <span id="bulkQueueCount">0 bestanden klaar</span>
+          <button class="btn btn-small btn-danger" id="bulkClearBtn" style="display:none;">Wissen</button>
+        </div>
+        <div id="bulkQueueList">
+          <p class="bulk-queue-empty">Neem foto's of kies bestanden — ze verschijnen hier</p>
+        </div>
+        <button class="btn btn-primary btn-full" id="bulkStartBtn" style="display:none;">
+          Alles verwerken →
+        </button>
+      </div>
+
       <div class="divider">
         <span>of</span>
       </div>

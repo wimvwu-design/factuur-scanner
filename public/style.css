@@ -644,6 +644,62 @@ body {
   background: rgba(201, 168, 76, 0.06);
 }
 
+/* Bulk Queue (collect phase) */
+.bulk-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 8px;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.bulk-queue-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px;
+  font-weight: 300;
+}
+
+.bulk-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card-2);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  border: 1px solid rgba(201, 168, 76, 0.08);
+}
+
+.bulk-queue-item .bulk-item-name {
+  flex: 1;
+  color: var(--text-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-remove-bulk {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-remove-bulk:hover {
+  color: var(--danger);
+  background: rgba(231, 76, 60, 0.1);
+}
+
 /* Bulk Progress */
 .bulk-progress {
   margin-bottom: 20px;

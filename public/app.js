@@ -17,6 +17,7 @@ const loading = document.getElementById('loading');
 
 let selectedFile = null;
 let bulkMode = false;
+let bulkFiles = []; // Collected files for bulk processing
 
 // --- Mode Toggle ---
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -25,14 +26,20 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.classList.add('active');
     bulkMode = btn.dataset.mode === 'bulk';
 
+    // Reset state when switching modes
+    bulkFiles = [];
+    updateBulkQueue();
+
     if (bulkMode) {
       fileInput.setAttribute('multiple', '');
       document.getElementById('uploadTitle').textContent = 'Facturen uploaden (bulk)';
       document.getElementById('uploadText').textContent = 'Sleep meerdere facturen hierheen of';
+      document.getElementById('bulkQueueSection').style.display = '';
     } else {
       fileInput.removeAttribute('multiple');
       document.getElementById('uploadTitle').textContent = 'Factuur uploaden';
       document.getElementById('uploadText').textContent = 'Sleep een factuur hierheen of';
+      document.getElementById('bulkQueueSection').style.display = 'none';
     }
   });
 });
@@ -51,8 +58,8 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  if (bulkMode && e.dataTransfer.files.length > 0) {
-    startBulkProcessing(Array.from(e.dataTransfer.files));
+  if (bulkMode) {
+    addToBulkQueue(Array.from(e.dataTransfer.files));
   } else {
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
@@ -61,7 +68,8 @@ dropZone.addEventListener('drop', (e) => {
 
 fileInput.addEventListener('change', (e) => {
   if (bulkMode && e.target.files.length > 0) {
-    startBulkProcessing(Array.from(e.target.files));
+    addToBulkQueue(Array.from(e.target.files));
+    fileInput.value = '';
   } else if (e.target.files[0]) {
     handleFile(e.target.files[0]);
   }
@@ -74,7 +82,8 @@ cameraBtn.addEventListener('click', () => {
 cameraInput.addEventListener('change', (e) => {
   if (e.target.files[0]) {
     if (bulkMode) {
-      startBulkProcessing([e.target.files[0]]);
+      addToBulkQueue([e.target.files[0]]);
+      cameraInput.value = '';
     } else {
       handleFile(e.target.files[0]);
     }
@@ -145,6 +154,70 @@ document.getElementById('manualBtn').addEventListener('click', () => {
   document.getElementById('factuur_nummer').value = '';
   stepUpload.style.display = 'none';
   stepReview.style.display = '';
+});
+
+// --- Bulk Queue: collect files before processing ---
+
+function addToBulkQueue(files) {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+  let added = 0;
+  files.forEach(f => {
+    if (f.size <= 10 * 1024 * 1024 && allowed.includes(f.type)) {
+      bulkFiles.push(f);
+      added++;
+    }
+  });
+  if (added === 0 && files.length > 0) {
+    showToast('Geen geldige bestanden');
+  } else if (added > 0) {
+    showToast(`${added} ${added === 1 ? 'bestand' : 'bestanden'} toegevoegd`);
+  }
+  updateBulkQueue();
+}
+
+function updateBulkQueue() {
+  const list = document.getElementById('bulkQueueList');
+  const count = document.getElementById('bulkQueueCount');
+  const startBtn = document.getElementById('bulkStartBtn');
+  const clearBtn = document.getElementById('bulkClearBtn');
+
+  if (!list) return;
+
+  count.textContent = `${bulkFiles.length} ${bulkFiles.length === 1 ? 'bestand' : 'bestanden'} klaar`;
+
+  if (bulkFiles.length === 0) {
+    list.innerHTML = '<p class="bulk-queue-empty">Neem foto\'s of kies bestanden — ze verschijnen hier</p>';
+    startBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+  } else {
+    list.innerHTML = bulkFiles.map((f, i) => `
+      <div class="bulk-queue-item">
+        <span class="bulk-item-icon">📄</span>
+        <span class="bulk-item-name">${escapeHtml(f.name)}</span>
+        <button class="btn-remove-bulk" onclick="removeBulkFile(${i})">✕</button>
+      </div>
+    `).join('');
+    startBtn.style.display = '';
+    clearBtn.style.display = '';
+  }
+}
+
+// Global so onclick works
+window.removeBulkFile = function(index) {
+  bulkFiles.splice(index, 1);
+  updateBulkQueue();
+};
+
+document.getElementById('bulkStartBtn').addEventListener('click', () => {
+  if (bulkFiles.length === 0) return;
+  startBulkProcessing([...bulkFiles]);
+  bulkFiles = [];
+  updateBulkQueue();
+});
+
+document.getElementById('bulkClearBtn').addEventListener('click', () => {
+  bulkFiles = [];
+  updateBulkQueue();
 });
 
 // --- Scan Button (AI extract) - Single mode ---
@@ -289,7 +362,7 @@ document.getElementById('scanNextBtn').addEventListener('click', () => {
   resetToStart();
 });
 
-// --- Bulk Mode ---
+// --- Bulk Processing ---
 
 async function startBulkProcessing(files) {
   // Filter valid files
@@ -350,14 +423,13 @@ async function startBulkProcessing(files) {
 
       // Check required fields
       if (!data.naam || !data.iban || !data.bedrag || parseFloat(data.bedrag) <= 0) {
-        // Need manual review — pause bulk and show review form
+        // Need manual review
         statusEl.textContent = 'Review nodig';
         statusEl.className = 'bulk-item-status error';
 
         const resolved = await showBulkReview(data, file.name);
 
         if (resolved) {
-          // User filled in the missing data
           const queueRes = await fetch('/api/queue', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -416,11 +488,9 @@ async function startBulkProcessing(files) {
   status.textContent = `Klaar: ${successCount} verwerkt, ${errorCount} fouten`;
   bar.style.width = '100%';
 
-  // Show summary and actions
-  const totalAdded = successCount;
   resultsDiv.innerHTML += `
     <div class="bulk-done-summary">
-      <div class="bulk-done-counter"><span>${totalAdded}</span> facturen toegevoegd</div>
+      <div class="bulk-done-counter"><span>${successCount}</span> facturen toegevoegd</div>
     </div>
   `;
   document.getElementById('bulkActions').style.display = '';
@@ -431,14 +501,11 @@ function showBulkReview(data, filename) {
     const reviewDiv = document.getElementById('bulkReview');
     reviewDiv.style.display = '';
 
-    // Populate the main form with extracted data
     populateForm(data);
 
-    // Show the review form inline
     stepReview.style.display = '';
     stepBulk.querySelector('.bulk-progress').style.display = 'none';
 
-    // Change button text
     const qrBtn = document.getElementById('generateQrBtn');
     const backBtn = document.getElementById('backBtn');
     const origQrText = qrBtn.textContent;
@@ -487,7 +554,6 @@ function showBulkReview(data, filename) {
       resolve(null);
     }
 
-    // Use capture to intercept before the existing listeners
     qrBtn.addEventListener('click', onConfirm, { capture: true, once: true });
     backBtn.addEventListener('click', onSkip, { capture: true, once: true });
   });
@@ -506,6 +572,7 @@ function escapeHtml(str) {
 
 function resetToStart() {
   selectedFile = null;
+  bulkFiles = [];
   preview.style.display = 'none';
   scanBtn.style.display = 'none';
   dropZone.style.display = '';
@@ -516,6 +583,7 @@ function resetToStart() {
   stepReview.style.display = 'none';
   stepBulk.style.display = 'none';
   stepUpload.style.display = '';
+  updateBulkQueue();
 }
 
 // --- Toast ---
