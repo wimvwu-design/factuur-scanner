@@ -12,9 +12,30 @@ const uploadError = document.getElementById('uploadError');
 const stepUpload = document.getElementById('step-upload');
 const stepReview = document.getElementById('step-review');
 const stepDone = document.getElementById('step-done');
+const stepBulk = document.getElementById('step-bulk');
 const loading = document.getElementById('loading');
 
 let selectedFile = null;
+let bulkMode = false;
+
+// --- Mode Toggle ---
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    bulkMode = btn.dataset.mode === 'bulk';
+
+    if (bulkMode) {
+      fileInput.setAttribute('multiple', '');
+      document.getElementById('uploadTitle').textContent = 'Facturen uploaden (bulk)';
+      document.getElementById('uploadText').textContent = 'Sleep meerdere facturen hierheen of';
+    } else {
+      fileInput.removeAttribute('multiple');
+      document.getElementById('uploadTitle').textContent = 'Factuur uploaden';
+      document.getElementById('uploadText').textContent = 'Sleep een factuur hierheen of';
+    }
+  });
+});
 
 // --- Step 1: File Upload ---
 
@@ -30,12 +51,20 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
+  if (bulkMode && e.dataTransfer.files.length > 0) {
+    startBulkProcessing(Array.from(e.dataTransfer.files));
+  } else {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
 });
 
 fileInput.addEventListener('change', (e) => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
+  if (bulkMode && e.target.files.length > 0) {
+    startBulkProcessing(Array.from(e.target.files));
+  } else if (e.target.files[0]) {
+    handleFile(e.target.files[0]);
+  }
 });
 
 cameraBtn.addEventListener('click', () => {
@@ -43,7 +72,13 @@ cameraBtn.addEventListener('click', () => {
 });
 
 cameraInput.addEventListener('change', (e) => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
+  if (e.target.files[0]) {
+    if (bulkMode) {
+      startBulkProcessing([e.target.files[0]]);
+    } else {
+      handleFile(e.target.files[0]);
+    }
+  }
 });
 
 removeFile.addEventListener('click', () => {
@@ -112,12 +147,14 @@ document.getElementById('manualBtn').addEventListener('click', () => {
   stepReview.style.display = '';
 });
 
-// --- Scan Button (AI extract) ---
+// --- Scan Button (AI extract) - Single mode ---
 scanBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
 
   stepUpload.style.display = 'none';
   loading.style.display = '';
+  document.getElementById('loadingText').textContent = 'Factuur wordt geanalyseerd...';
+  document.getElementById('loadingSub').textContent = 'Dit kan enkele seconden duren';
 
   try {
     const formData = new FormData();
@@ -185,7 +222,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
   stepUpload.style.display = '';
 });
 
-// --- Step 3: Add to Queue ---
+// --- Step 3: Add to Queue (Single mode) ---
 
 document.getElementById('generateQrBtn').addEventListener('click', async () => {
   const ontvanger = document.getElementById('ontvanger').value.trim();
@@ -252,6 +289,221 @@ document.getElementById('scanNextBtn').addEventListener('click', () => {
   resetToStart();
 });
 
+// --- Bulk Mode ---
+
+async function startBulkProcessing(files) {
+  // Filter valid files
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+  const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024 && allowed.includes(f.type));
+
+  if (validFiles.length === 0) {
+    showError('Geen geldige bestanden gevonden');
+    return;
+  }
+
+  // Show bulk progress
+  stepUpload.style.display = 'none';
+  stepBulk.style.display = '';
+  document.getElementById('bulkActions').style.display = 'none';
+
+  const resultsDiv = document.getElementById('bulkResults');
+  const bar = document.getElementById('bulkBar');
+  const status = document.getElementById('bulkStatus');
+
+  // Initialize item list
+  resultsDiv.innerHTML = validFiles.map((f, i) => `
+    <div class="bulk-item" id="bulk-item-${i}">
+      <span class="bulk-item-icon">📄</span>
+      <span class="bulk-item-name">${escapeHtml(f.name)}</span>
+      <span class="bulk-item-amount" id="bulk-amount-${i}"></span>
+      <span class="bulk-item-status pending" id="bulk-status-${i}">Wachten...</span>
+    </div>
+  `).join('');
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  // Process each file sequentially
+  for (let i = 0; i < validFiles.length; i++) {
+    const file = validFiles[i];
+    const statusEl = document.getElementById(`bulk-status-${i}`);
+    const amountEl = document.getElementById(`bulk-amount-${i}`);
+
+    statusEl.textContent = 'Scannen...';
+    statusEl.className = 'bulk-item-status pending';
+    status.textContent = `${i + 1} / ${validFiles.length} wordt verwerkt...`;
+    bar.style.width = `${((i) / validFiles.length) * 100}%`;
+
+    try {
+      // Step 1: Extract data via AI
+      const formData = new FormData();
+      formData.append('invoice', file);
+
+      const extractRes = await fetch('/api/extract', { method: 'POST', body: formData });
+      const extractResult = await extractRes.json();
+
+      if (!extractResult.success) {
+        throw new Error(extractResult.error || 'Scan mislukt');
+      }
+
+      const data = extractResult.data;
+
+      // Check required fields
+      if (!data.naam || !data.iban || !data.bedrag || parseFloat(data.bedrag) <= 0) {
+        // Need manual review — pause bulk and show review form
+        statusEl.textContent = 'Review nodig';
+        statusEl.className = 'bulk-item-status error';
+
+        const resolved = await showBulkReview(data, file.name);
+
+        if (resolved) {
+          // User filled in the missing data
+          const queueRes = await fetch('/api/queue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resolved)
+          });
+          const queueResult = await queueRes.json();
+          if (!queueResult.success) throw new Error(queueResult.error);
+
+          statusEl.textContent = 'OK';
+          statusEl.className = 'bulk-item-status success';
+          amountEl.textContent = `€ ${parseFloat(resolved.bedrag).toFixed(2)}`;
+          successCount++;
+        } else {
+          statusEl.textContent = 'Overgeslagen';
+          statusEl.className = 'bulk-item-status error';
+          errorCount++;
+        }
+        continue;
+      }
+
+      // Step 2: Add to queue directly
+      const queueRes = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ontvanger: data.ontvanger || '',
+          naam: data.naam,
+          iban: data.iban,
+          bic: data.bic || '',
+          bedrag: data.bedrag,
+          mededeling: data.mededeling || '',
+          mededeling_type: data.mededeling_type || 'vrij',
+          factuur_nummer: data.factuur_nummer || '',
+          vervaldatum: data.vervaldatum || ''
+        })
+      });
+
+      const queueResult = await queueRes.json();
+      if (!queueResult.success) throw new Error(queueResult.error);
+
+      statusEl.textContent = 'OK';
+      statusEl.className = 'bulk-item-status success';
+      amountEl.textContent = `€ ${parseFloat(data.bedrag).toFixed(2)}`;
+      successCount++;
+
+    } catch (error) {
+      statusEl.textContent = 'Fout';
+      statusEl.className = 'bulk-item-status error';
+      errorCount++;
+    }
+
+    bar.style.width = `${((i + 1) / validFiles.length) * 100}%`;
+  }
+
+  // Done
+  status.textContent = `Klaar: ${successCount} verwerkt, ${errorCount} fouten`;
+  bar.style.width = '100%';
+
+  // Show summary and actions
+  const totalAdded = successCount;
+  resultsDiv.innerHTML += `
+    <div class="bulk-done-summary">
+      <div class="bulk-done-counter"><span>${totalAdded}</span> facturen toegevoegd</div>
+    </div>
+  `;
+  document.getElementById('bulkActions').style.display = '';
+}
+
+function showBulkReview(data, filename) {
+  return new Promise((resolve) => {
+    const reviewDiv = document.getElementById('bulkReview');
+    reviewDiv.style.display = '';
+
+    // Populate the main form with extracted data
+    populateForm(data);
+
+    // Show the review form inline
+    stepReview.style.display = '';
+    stepBulk.querySelector('.bulk-progress').style.display = 'none';
+
+    // Change button text
+    const qrBtn = document.getElementById('generateQrBtn');
+    const backBtn = document.getElementById('backBtn');
+    const origQrText = qrBtn.textContent;
+    const origBackText = backBtn.textContent;
+    qrBtn.textContent = 'Bevestigen & doorgaan →';
+    backBtn.textContent = 'Overslaan';
+
+    function cleanup() {
+      qrBtn.removeEventListener('click', onConfirm);
+      backBtn.removeEventListener('click', onSkip);
+      qrBtn.textContent = origQrText;
+      backBtn.textContent = origBackText;
+      stepReview.style.display = 'none';
+      reviewDiv.style.display = 'none';
+      stepBulk.querySelector('.bulk-progress').style.display = '';
+    }
+
+    function onConfirm(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const result = {
+        ontvanger: document.getElementById('ontvanger').value.trim(),
+        naam: document.getElementById('naam').value.trim(),
+        iban: document.getElementById('iban').value.trim(),
+        bic: document.getElementById('bic').value.trim(),
+        bedrag: document.getElementById('bedrag').value.trim(),
+        mededeling: document.getElementById('mededeling').value.trim(),
+        mededeling_type: document.querySelector('input[name="mededeling_type"]:checked').value,
+        factuur_nummer: document.getElementById('factuur_nummer').value.trim(),
+        vervaldatum: document.getElementById('vervaldatum').value.trim()
+      };
+
+      if (!result.naam || !result.iban || !result.bedrag) {
+        showToast('Vul naam, IBAN en bedrag in');
+        return;
+      }
+
+      cleanup();
+      resolve(result);
+    }
+
+    function onSkip(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      cleanup();
+      resolve(null);
+    }
+
+    // Use capture to intercept before the existing listeners
+    qrBtn.addEventListener('click', onConfirm, { capture: true, once: true });
+    backBtn.addEventListener('click', onSkip, { capture: true, once: true });
+  });
+}
+
+// Bulk new scan button
+document.getElementById('bulkNewBtn').addEventListener('click', () => {
+  resetToStart();
+});
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function resetToStart() {
   selectedFile = null;
   preview.style.display = 'none';
@@ -262,6 +514,7 @@ function resetToStart() {
   cameraInput.value = '';
   stepDone.style.display = 'none';
   stepReview.style.display = 'none';
+  stepBulk.style.display = 'none';
   stepUpload.style.display = '';
 }
 

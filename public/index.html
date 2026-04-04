@@ -22,15 +22,21 @@
       <p class="subtitle">Scan & betaal in enkele seconden</p>
     </header>
 
+    <!-- Mode Toggle -->
+    <div class="mode-toggle" id="modeToggle">
+      <button class="mode-btn active" id="modeSingle" data-mode="single">Enkel</button>
+      <button class="mode-btn" id="modeBulk" data-mode="bulk">Bulk modus</button>
+    </div>
+
     <!-- Step 1: Upload -->
     <section id="step-upload" class="step active">
       <div class="step-header">
         <span class="step-number">1</span>
-        <h2>Factuur uploaden</h2>
+        <h2 id="uploadTitle">Factuur uploaden</h2>
       </div>
       <div class="upload-area" id="dropZone">
         <div class="upload-icon">📄</div>
-        <p>Sleep een factuur hierheen of</p>
+        <p id="uploadText">Sleep een factuur hierheen of</p>
         <div class="upload-buttons">
           <label class="btn btn-primary" for="fileInput">
             Bestand kiezen
@@ -62,9 +68,38 @@
     <!-- Loading -->
     <div id="loading" class="loading" style="display:none;">
       <div class="spinner"></div>
-      <p>Factuur wordt geanalyseerd...</p>
-      <p class="loading-sub">Dit kan enkele seconden duren</p>
+      <p id="loadingText">Factuur wordt geanalyseerd...</p>
+      <p class="loading-sub" id="loadingSub">Dit kan enkele seconden duren</p>
     </div>
+
+    <!-- Bulk Progress -->
+    <section id="step-bulk" class="step" style="display:none;">
+      <div class="step-header">
+        <span class="step-number">1</span>
+        <h2>Bulk verwerking</h2>
+      </div>
+      <div class="bulk-progress">
+        <div class="bulk-bar-container">
+          <div class="bulk-bar" id="bulkBar" style="width:0%"></div>
+        </div>
+        <p class="bulk-status" id="bulkStatus">0 / 0 verwerkt</p>
+      </div>
+      <div id="bulkResults"></div>
+      <div id="bulkReview" style="display:none;">
+        <div class="bulk-review-header">
+          <p class="bulk-review-title">Controleer deze factuur</p>
+          <p class="bulk-review-hint">Verplichte velden ontbreken — vul aan en bevestig</p>
+        </div>
+      </div>
+      <div class="button-stack" id="bulkActions" style="display:none;">
+        <a href="/dashboard.html" target="_blank" class="btn btn-secondary btn-full">
+          Dashboard openen
+        </a>
+        <button class="btn btn-primary btn-full" id="bulkNewBtn">
+          Nieuwe bulk scannen
+        </button>
+      </div>
+    </section>
 
     <!-- Step 2: Review & Edit -->
     <section id="step-review" class="step" style="display:none;">
