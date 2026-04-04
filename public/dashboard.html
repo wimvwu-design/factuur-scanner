@@ -3,33 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1a5276">
+  <meta name="theme-color" content="#0A0A0A">
   <title>Factuur Dashboard - QR-codes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --primary: #1a5276;
-      --primary-light: #2980b9;
-      --accent: #27ae60;
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --gold-dark: #9A7A2E;
+      --bg: #0A0A0A;
+      --bg-card: #111111;
+      --bg-card-2: #1A1A1A;
+      --bg-card-3: #222222;
+      --text: #FFFFFF;
+      --text-grey: #CCCCCC;
+      --text-muted: #888888;
+      --border: rgba(201, 168, 76, 0.15);
+      --border-hover: rgba(201, 168, 76, 0.4);
+      --accent: #4CAF50;
       --danger: #e74c3c;
-      --bg: #f5f7fa;
-      --card-bg: #ffffff;
-      --text: #2c3e50;
-      --text-light: #7f8c8d;
-      --border: #dce1e8;
+      --radius: 8px;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
     .header {
-      background: var(--primary);
-      color: white;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
       padding: 20px 32px;
       display: flex;
       align-items: center;
@@ -37,8 +47,13 @@
     }
 
     .header h1 {
+      font-family: 'Playfair Display', serif;
       font-size: 22px;
       font-weight: 700;
+      background: linear-gradient(135deg, #fff 30%, var(--gold-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .header-right {
@@ -48,10 +63,13 @@
     }
 
     .badge {
-      background: rgba(255,255,255,0.2);
-      padding: 4px 12px;
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold);
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
 
     .btn {
@@ -60,37 +78,43 @@
       gap: 6px;
       padding: 10px 18px;
       border: none;
-      border-radius: 8px;
+      border-radius: 4px;
       font-size: 14px;
       font-weight: 600;
+      font-family: 'Inter', sans-serif;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s;
+      letter-spacing: 0.5px;
     }
 
     .btn-refresh {
-      background: rgba(255,255,255,0.15);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.4);
     }
 
     .btn-refresh:hover {
-      background: rgba(255,255,255,0.25);
+      background: rgba(201, 168, 76, 0.08);
+      border-color: var(--gold);
     }
 
     .btn-done {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent), #66BB6A);
       color: white;
       padding: 12px 24px;
-      font-size: 15px;
+      font-size: 14px;
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.25);
     }
 
     .btn-done:hover {
-      background: #219a52;
+      box-shadow: 0 6px 24px rgba(76, 175, 80, 0.4);
+      transform: translateY(-1px);
     }
 
     .btn-done:disabled {
-      opacity: 0.5;
+      opacity: 0.4;
       cursor: not-allowed;
+      transform: none;
     }
 
     .container {
@@ -107,22 +131,26 @@
     .empty-icon {
       font-size: 64px;
       margin-bottom: 16px;
+      filter: grayscale(0.3);
     }
 
     .empty-state h2 {
-      color: var(--text-light);
+      font-family: 'Playfair Display', serif;
+      color: var(--text-grey);
       font-size: 20px;
       margin-bottom: 8px;
     }
 
     .empty-state p {
-      color: var(--text-light);
+      color: var(--text-muted);
       font-size: 14px;
+      font-weight: 300;
     }
 
     .instructions {
-      background: #fff8e1;
-      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 16px 20px;
       margin-bottom: 24px;
       font-size: 14px;
@@ -130,6 +158,11 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
+      color: var(--text-grey);
+    }
+
+    .instructions strong {
+      color: var(--gold);
     }
 
     .instructions-icon {
@@ -144,16 +177,17 @@
     }
 
     .qr-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
       overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, border-color 0.3s, box-shadow 0.2s;
     }
 
     .qr-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      border-color: var(--border-hover);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     }
 
     .qr-card.removing {
@@ -173,14 +207,18 @@
     }
 
     .qr-card-title {
+      font-family: 'Playfair Display', serif;
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 4px;
+      color: var(--text);
     }
 
     .qr-card-meta {
       font-size: 12px;
-      color: var(--text-light);
+      color: var(--text-muted);
+      font-weight: 300;
+      letter-spacing: 0.3px;
     }
 
     .qr-card-body {
@@ -198,7 +236,9 @@
       width: 180px;
       height: 180px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius);
+      background: #ffffff;
+      padding: 8px;
     }
 
     .qr-card-details {
@@ -209,26 +249,31 @@
     .detail-row {
       display: flex;
       justify-content: space-between;
-      padding: 5px 0;
+      padding: 8px 0;
     }
 
     .detail-row + .detail-row {
-      border-top: 1px solid #f0f0f0;
+      border-top: 1px solid rgba(201, 168, 76, 0.08);
     }
 
     .detail-label {
-      color: var(--text-light);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .detail-value {
       font-weight: 600;
       text-align: right;
       word-break: break-all;
+      color: var(--text-grey);
     }
 
     .detail-amount .detail-value {
-      color: var(--primary);
+      color: var(--gold);
       font-size: 20px;
+      font-family: 'Playfair Display', serif;
     }
 
     .qr-card-footer {
@@ -241,14 +286,14 @@
     .loading {
       text-align: center;
       padding: 40px;
-      color: var(--text-light);
+      color: var(--text-muted);
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--primary);
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(201, 168, 76, 0.15);
+      border-top-color: var(--gold);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin: 0 auto 12px;
@@ -261,14 +306,16 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--text);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+      color: #0A0A0A;
+      padding: 12px 28px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
       z-index: 1000;
       animation: fadeInUp 0.3s ease;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 30px rgba(201, 168, 76, 0.3);
       display: none;
     }
 
@@ -278,6 +325,18 @@
     }
 
     @media (max-width: 600px) {
+      .header {
+        padding: 16px;
+      }
+
+      .header h1 {
+        font-size: 18px;
+      }
+
+      .container {
+        padding: 16px;
+      }
+
       .qr-grid {
         grid-template-columns: 1fr;
       }
@@ -290,6 +349,7 @@
       .detail-row {
         flex-direction: column;
         text-align: left;
+        gap: 2px;
       }
 
       .detail-value {
@@ -389,7 +449,7 @@
           </div>
         `).join('')}</div>`;
       } catch (error) {
-        content.innerHTML = `<div class="empty-state"><p style="color:#e74c3c;">Fout: ${error.message}</p></div>`;
+        content.innerHTML = `<div class="empty-state"><p style="color:var(--danger);">Fout: ${error.message}</p></div>`;
       }
     }
 
