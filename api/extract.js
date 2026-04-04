@@ -63,23 +63,37 @@ module.exports = async function handler(req, res) {
             },
             {
               type: 'text',
-              text: `Analyseer deze Belgische factuur en extraheer de volgende gegevens in JSON formaat:
+              text: `Je bent een expert in het lezen van Belgische facturen. Analyseer deze factuur zeer grondig en extraheer alle betalingsgegevens.
+
+Antwoord in dit exacte JSON formaat:
 {
-  "naam": "naam van de ontvanger/begunstigde (het bedrijf dat betaald moet worden)",
-  "iban": "IBAN rekeningnummer (formaat: BE## #### #### ####)",
+  "naam": "naam van de begunstigde (het bedrijf dat betaald moet worden)",
+  "iban": "IBAN rekeningnummer",
   "bic": "BIC/SWIFT code (indien zichtbaar, anders leeglaten)",
   "bedrag": "totaal te betalen bedrag als nummer (bijv. 125.50)",
-  "mededeling": "gestructureerde mededeling (formaat: +++###/####/#####+++  of  ***###/####/#####***) OF vrije mededeling",
+  "mededeling": "gestructureerde mededeling OF vrije mededeling",
   "mededeling_type": "gestructureerd" of "vrij",
   "vervaldatum": "vervaldatum indien zichtbaar (DD/MM/YYYY)",
   "factuur_nummer": "factuurnummer indien zichtbaar"
 }
 
-Belangrijk:
-- Zoek specifiek naar de gestructureerde mededeling (12 cijfers in het formaat +++###/####/#####+++).
-- Het IBAN is een Belgisch rekeningnummer (begint met BE).
-- Het bedrag is het totaal inclusief BTW.
-- Antwoord ENKEL met het JSON object, geen extra tekst.`
+CRUCIALE INSTRUCTIES VOOR HET IBAN:
+- Het IBAN staat vaak onderaan de factuur, in de footer, in het betalingsoverzicht, of naast "rekeningnummer" / "bankrekeningnummer" / "te betalen op".
+- Belgische IBANs beginnen met BE en hebben 16 tekens (bijv. BE68 5390 0754 7034).
+- Nederlandse IBANs beginnen met NL en hebben 18 tekens.
+- Het IBAN kan met of zonder spaties geschreven zijn. Geef het terug MET spaties (bijv. BE68 5390 0754 7034).
+- Zoek ook in kleine tekst, voetteksten, en betaalinstructies.
+- Als er meerdere IBANs staan, kies het IBAN dat bij de betaalinstructie hoort (niet het IBAN van de klant).
+
+INSTRUCTIES VOOR MEDEDELING:
+- Zoek naar gestructureerde mededeling: 12 cijfers in het formaat +++###/####/#####+++ of ***###/####/#####***.
+- Als er geen gestructureerde mededeling is, zoek naar een vrije mededeling of factuurreferentie.
+
+INSTRUCTIES VOOR BEDRAG:
+- Het bedrag is het TOTAAL inclusief BTW (het eindbedrag dat betaald moet worden).
+- Geef het als getal met 2 decimalen (bijv. 125.50), zonder valutateken.
+
+Antwoord ENKEL met het JSON object, geen extra tekst of uitleg.`
             }
           ]
         }
