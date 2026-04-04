@@ -203,5 +203,5 @@ app.get('/api/queue', (req, res) => queueHandler(req, res));
 app.post('/api/queue', (req, res) => queueHandler(req, res));
 
 app.listen(PORT, () => {
-  console.log(`Factuur Scanner draait op http://localhost:${PORT}`);
+  console.log(`Genius Pay draait op http://localhost:${PORT}`);
 });

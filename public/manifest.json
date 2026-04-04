@@ -1,14 +1,14 @@
 {
-  "name": "Factuur Scanner",
-  "short_name": "FactuurScan",
+  "name": "Genius Pay",
+  "short_name": "GeniusPay",
   "description": "Scan facturen en betaal via EPC QR-code",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fa",
-  "theme_color": "#1a5276",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>",
+      "src": "/logo.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

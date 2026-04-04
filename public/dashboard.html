@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0A0A0A">
-  <title>Factuur Dashboard - QR-codes</title>
+  <title>Genius Pay - Dashboard</title>
+  <link rel="icon" href="/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -444,7 +445,10 @@
 </head>
 <body>
   <div class="header">
-    <h1>Factuur Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="/logo.svg" alt="Genius Pay" style="width:32px;height:32px;">
+      <h1>Genius Pay</h1>
+    </div>
     <div class="header-right">
       <span class="badge" id="countBadge">0 facturen</span>
       <button class="btn btn-refresh" onclick="loadQueue()">Vernieuwen</button>
