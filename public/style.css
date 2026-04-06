@@ -92,6 +92,30 @@ body {
   min-width: 280px;
 }
 
+.btn-google-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 280px;
+  padding: 12px 24px;
+  margin: 8px auto 0;
+  background: #ffffff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.btn-google-custom:hover {
+  background: #f7f8f8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* User Bar */
 .user-bar {
   display: flex;
