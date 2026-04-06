@@ -258,32 +258,50 @@
     <div id="toast" class="toast" style="display:none;"></div>
   </div>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="/auth.js"></script>
   <script>
-    // Initialize Google Sign-In after loading client ID
-    fetch('/api/auth-config').then(r => r.json()).then(config => {
-      google.accounts.id.initialize({
-        client_id: config.clientId,
-        callback: handleGoogleCredential,
-        auto_select: true,
-      });
-      google.accounts.id.renderButton(
-        document.getElementById('googleSignInBtn'),
-        { theme: 'filled_black', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
-      );
-      initAuth();
-    }).catch(() => {
-      // If auth-config fails, check if already have token
-      initAuth();
-    });
-
     window.onAuthReady = function(user) {
       document.getElementById('userBar').style.display = '';
       document.getElementById('userAvatar').src = user.picture || '';
       document.getElementById('userName').textContent = user.name || user.email;
     };
+
+    async function setupGoogleSignIn() {
+      // Load client ID
+      let clientId;
+      try {
+        const res = await fetch('/api/auth-config');
+        const config = await res.json();
+        clientId = config.clientId;
+      } catch(e) {
+        initAuth();
+        return;
+      }
+
+      // Wait for Google Identity Services script to load
+      function waitForGoogle(cb, attempts) {
+        if (typeof google !== 'undefined' && google.accounts) { cb(); return; }
+        if (attempts <= 0) { initAuth(); return; }
+        setTimeout(() => waitForGoogle(cb, attempts - 1), 200);
+      }
+
+      waitForGoogle(() => {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredential,
+          auto_select: true,
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('googleSignInBtn'),
+          { theme: 'filled_black', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
+        );
+        initAuth();
+      }, 25);
+    }
+
+    setupGoogleSignIn();
   </script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="/app.js"></script>
 </body>
 </html>

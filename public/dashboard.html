@@ -500,29 +500,45 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="/auth.js"></script>
   <script>
-    // Initialize Google Sign-In
-    fetch('/api/auth-config').then(r => r.json()).then(config => {
-      google.accounts.id.initialize({
-        client_id: config.clientId,
-        callback: handleGoogleCredential,
-        auto_select: true,
-      });
-      google.accounts.id.renderButton(
-        document.getElementById('googleSignInBtn'),
-        { theme: 'filled_black', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
-      );
-      initAuth();
-    }).catch(() => initAuth());
-
     window.onAuthReady = function(user) {
       document.getElementById('userInfo').style.display = '';
       document.getElementById('dashUserAvatar').src = user.picture || '';
       loadQueue();
     };
+
+    async function setupGoogleSignIn() {
+      let clientId;
+      try {
+        const res = await fetch('/api/auth-config');
+        const config = await res.json();
+        clientId = config.clientId;
+      } catch(e) { initAuth(); return; }
+
+      function waitForGoogle(cb, attempts) {
+        if (typeof google !== 'undefined' && google.accounts) { cb(); return; }
+        if (attempts <= 0) { initAuth(); return; }
+        setTimeout(() => waitForGoogle(cb, attempts - 1), 200);
+      }
+
+      waitForGoogle(() => {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredential,
+          auto_select: true,
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('googleSignInBtn'),
+          { theme: 'filled_black', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
+        );
+        initAuth();
+      }, 25);
+    }
+
+    setupGoogleSignIn();
   </script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
 
   <script>
     let autoRefreshInterval;

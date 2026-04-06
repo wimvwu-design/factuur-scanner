@@ -88,6 +88,8 @@ body {
 .google-btn-container {
   display: flex;
   justify-content: center;
+  min-height: 44px;
+  min-width: 280px;
 }
 
 /* User Bar */
