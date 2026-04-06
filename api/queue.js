@@ -1,13 +1,16 @@
 const { Redis } = require('@upstash/redis');
 const QRCode = require('qrcode');
-
-const QUEUE_KEY = 'factuur:queue';
+const { requireAuth } = require('./_auth');
 
 function getRedis() {
   return new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
+}
+
+function userQueueKey(userId) {
+  return `factuur:queue:${userId}`;
 }
 
 function generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_type }) {
@@ -46,9 +49,14 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Redis niet geconfigureerd' });
   }
 
-  const redis = getRedis();
+  // Authenticate user
+  const user = await requireAuth(req, res);
+  if (!user) return; // 401 already sent
 
-  // GET - List all pending QR codes
+  const redis = getRedis();
+  const QUEUE_KEY = userQueueKey(user.sub);
+
+  // GET - List all pending QR codes for this user
   if (req.method === 'GET') {
     try {
       const items = await redis.lrange(QUEUE_KEY, 0, -1);
@@ -56,7 +64,7 @@ module.exports = async function handler(req, res) {
         if (typeof item === 'string') return JSON.parse(item);
         return item;
       });
-      return res.json({ success: true, items: parsed });
+      return res.json({ success: true, items: parsed, user: { email: user.email, name: user.name, picture: user.picture } });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -72,7 +80,6 @@ module.exports = async function handler(req, res) {
         const { id } = req.body;
         if (!id) return res.status(400).json({ error: 'ID is verplicht' });
 
-        // Get all items, filter out the one with matching ID, rewrite the list
         const items = await redis.lrange(QUEUE_KEY, 0, -1);
         await redis.del(QUEUE_KEY);
 
@@ -81,7 +88,7 @@ module.exports = async function handler(req, res) {
           const parsed = typeof item === 'string' ? JSON.parse(item) : item;
           if (parsed.id === id && !removed) {
             removed = true;
-            continue; // Skip this one
+            continue;
           }
           await redis.rpush(QUEUE_KEY, JSON.stringify(parsed));
         }
@@ -100,7 +107,6 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Naam, IBAN en bedrag zijn verplicht' });
       }
 
-      // Generate EPC QR code
       const epcPayload = generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_type });
       const qrDataUrl = await QRCode.toDataURL(epcPayload, {
         width: 400,

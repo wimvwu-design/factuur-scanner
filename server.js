@@ -26,6 +26,15 @@ const upload = multer({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Auth config endpoint
+app.get('/api/auth-config', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    return res.status(500).json({ error: 'Google Client ID niet geconfigureerd' });
+  }
+  res.json({ clientId });
+});
+
 // Extract invoice data using Claude Vision
 app.post('/api/extract', upload.single('invoice'), async (req, res) => {
   try {

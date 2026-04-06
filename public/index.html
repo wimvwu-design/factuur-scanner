@@ -15,6 +15,16 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <!-- Login Overlay -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <img src="/logo.svg" alt="Genius Pay" class="login-logo">
+      <h1 class="login-title">Genius Pay</h1>
+      <p class="login-subtitle">Log in om je facturen te beheren</p>
+      <div id="googleSignInBtn" class="google-btn-container"></div>
+    </div>
+  </div>
+
   <div class="app">
     <!-- Header -->
     <header class="header">
@@ -23,6 +33,11 @@
       </div>
       <h1>Genius Pay</h1>
       <p class="subtitle">Scan & betaal in enkele seconden</p>
+      <div class="user-bar" id="userBar" style="display:none;">
+        <img id="userAvatar" class="user-avatar" alt="">
+        <span id="userName" class="user-name"></span>
+        <button class="btn-logout" onclick="logout()">Uitloggen</button>
+      </div>
     </header>
 
     <!-- Mode Toggle -->
@@ -243,6 +258,32 @@
     <div id="toast" class="toast" style="display:none;"></div>
   </div>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/auth.js"></script>
+  <script>
+    // Initialize Google Sign-In after loading client ID
+    fetch('/api/auth-config').then(r => r.json()).then(config => {
+      google.accounts.id.initialize({
+        client_id: config.clientId,
+        callback: handleGoogleCredential,
+        auto_select: true,
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('googleSignInBtn'),
+        { theme: 'filled_black', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
+      );
+      initAuth();
+    }).catch(() => {
+      // If auth-config fails, check if already have token
+      initAuth();
+    });
+
+    window.onAuthReady = function(user) {
+      document.getElementById('userBar').style.display = '';
+      document.getElementById('userAvatar').src = user.picture || '';
+      document.getElementById('userName').textContent = user.name || user.email;
+    };
+  </script>
   <script src="/app.js"></script>
 </body>
 </html>

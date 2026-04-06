@@ -233,7 +233,7 @@ scanBtn.addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('invoice', selectedFile);
 
-    const response = await fetch('/api/extract', {
+    const response = await authFetch('/api/extract', {
       method: 'POST',
       body: formData
     });
@@ -318,7 +318,7 @@ document.getElementById('generateQrBtn').addEventListener('click', async () => {
   btn.textContent = 'Toevoegen...';
 
   try {
-    const response = await fetch('/api/queue', {
+    const response = await authFetch('/api/queue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ontvanger, naam, iban, bic, bedrag, mededeling, mededeling_type, factuur_nummer, vervaldatum })
@@ -338,7 +338,7 @@ document.getElementById('generateQrBtn').addEventListener('click', async () => {
 
     // Get queue count
     try {
-      const queueRes = await fetch('/api/queue');
+      const queueRes = await authFetch('/api/queue');
       const queueData = await queueRes.json();
       document.getElementById('queueCount').textContent = queueData.items ? queueData.items.length : '?';
     } catch (e) {
@@ -412,7 +412,7 @@ async function startBulkProcessing(files) {
       const formData = new FormData();
       formData.append('invoice', file);
 
-      const extractRes = await fetch('/api/extract', { method: 'POST', body: formData });
+      const extractRes = await authFetch('/api/extract', { method: 'POST', body: formData });
       const extractResult = await extractRes.json();
 
       if (!extractResult.success) {
@@ -430,7 +430,7 @@ async function startBulkProcessing(files) {
         const resolved = await showBulkReview(data, file.name);
 
         if (resolved) {
-          const queueRes = await fetch('/api/queue', {
+          const queueRes = await authFetch('/api/queue', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(resolved)
@@ -451,7 +451,7 @@ async function startBulkProcessing(files) {
       }
 
       // Step 2: Add to queue directly
-      const queueRes = await fetch('/api/queue', {
+      const queueRes = await authFetch('/api/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

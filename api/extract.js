@@ -1,6 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { IncomingForm } = require('formidable');
 const fs = require('fs');
+const { requireAuth } = require('./_auth');
 
 // Disable default body parsing for file uploads
 const config = {
@@ -27,6 +28,10 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Authenticate user
+  const user = await requireAuth(req, res);
+  if (!user) return;
 
   try {
     const { files } = await parseForm(req);
