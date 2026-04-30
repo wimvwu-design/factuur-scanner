@@ -13,6 +13,15 @@ function userQueueKey(userId) {
   return `factuur:queue:${userId}`;
 }
 
+function cleanBeneficiaryName(naam) {
+  // EPC QR: only the company/person name, not the address
+  // Split on comma, newline, or common address indicators and take just the name part
+  let clean = naam.split(/[,\n]/).shift().trim();
+  // Remove trailing address patterns (street + number)
+  clean = clean.replace(/\s+\d{4}\s+\w+$/i, '').trim();
+  return clean.substring(0, 70);
+}
+
 function generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_type }) {
   const cleanIban = iban.replace(/\s/g, '');
   const cleanAmount = parseFloat(bedrag).toFixed(2);
@@ -24,6 +33,9 @@ function generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_ty
     const digits = mededeling.replace(/[^0-9]/g, '');
     if (digits.length === 12) {
       reference = digits;
+    } else {
+      // Fallback: not a valid 12-digit structured ref, use as free text
+      freeText = mededeling;
     }
   } else if (mededeling) {
     freeText = mededeling;
@@ -32,7 +44,7 @@ function generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_ty
   const lines = [
     'BCD', '002', '1', 'SCT',
     bic || '',
-    naam.substring(0, 70),
+    cleanBeneficiaryName(naam),
     cleanIban,
     `EUR${cleanAmount}`,
     '',
@@ -55,6 +67,11 @@ module.exports = async function handler(req, res) {
 
   const redis = getRedis();
   const QUEUE_KEY = userQueueKey(user.sub);
+
+  const allowedEmail = (process.env.MAILBOX_SCAN_ALLOWED_EMAIL || '').trim().toLowerCase();
+  if (allowedEmail && user.email.toLowerCase() === allowedEmail) {
+    await redis.set(`mailbox:emailToSub:${allowedEmail}`, user.sub);
+  }
 
   // GET - List all pending QR codes for this user
   if (req.method === 'GET') {
