@@ -1,6 +1,6 @@
 const { Redis } = require('@upstash/redis');
 const QRCode = require('qrcode');
-const { parseCodaboxEmail, generateEpcPayload } = require('./_codabox');
+const { parseCodaboxEmail, generateEpcPayload, isDomiciliated } = require('./_codabox');
 
 function getRedis() {
   return new Redis({
@@ -70,7 +70,18 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  const body = payload.html || payload.plain || payload.body || '';
+  // Check both html and plain bodies for the domiciliation signal — Codabox sometimes
+  // encodes the [X] checkbox differently in HTML (☒, &#9746;, etc.) than in plain text.
+  if (isDomiciliated(payload.html) || isDomiciliated(payload.plain)) {
+    if (messageId) {
+      await redis.sadd(`mailbox:processed:${userSub}`, messageId);
+    }
+    return res.json({ ok: true, skipped: 'already-paid' });
+  }
+
+  // Prefer plain text for field extraction (cleaner, no Outlook re-wrapping artefacts);
+  // fall back to HTML if plain is empty.
+  const body = payload.plain || payload.html || payload.body || '';
   const parsed = parseCodaboxEmail(body);
 
   if (messageId) {

@@ -1,18 +1,36 @@
+function decodeHtmlEntities(s) {
+  return s
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)));
+}
+
 function htmlToText(html) {
-  return html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/?(p|div|tr|td|th|li|h\d)[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+  return decodeHtmlEntities(
+    html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?(p|div|tr|td|th|li|h\d)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+  )
     .replace(/\r\n/g, '\n')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n /g, '\n')
     .replace(/\n{3,}/g, '\n\n');
+}
+
+// Detect "paid via direct debit". Per gebruiker: deze zin staat nooit in een Codabox-mail
+// zonder dat de checkbox aangevinkt is, dus de aanwezigheid alleen volstaat als signaal.
+const DOMICILIATION_RE = /Betaald\s+via\s+domiciliering/i;
+
+function isDomiciliated(rawBody) {
+  if (!rawBody) return false;
+  const text = rawBody.includes('<') ? htmlToText(rawBody) : decodeHtmlEntities(rawBody);
+  return DOMICILIATION_RE.test(text);
 }
 
 function extractField(text, pattern) {
@@ -32,9 +50,9 @@ function formatStructuredRef(digits) {
 
 function parseCodaboxEmail(body) {
   if (!body) return null;
-  const text = body.includes('<') ? htmlToText(body) : body;
+  const text = body.includes('<') ? htmlToText(body) : decodeHtmlEntities(body);
 
-  if (/Betaald via domiciliering\s*\[X\]/i.test(text)) {
+  if (DOMICILIATION_RE.test(text)) {
     return { paid: true };
   }
 
@@ -103,4 +121,4 @@ function generateEpcPayload({ naam, iban, bic, bedrag, mededeling, mededeling_ty
   return lines.join('\n');
 }
 
-module.exports = { parseCodaboxEmail, generateEpcPayload };
+module.exports = { parseCodaboxEmail, generateEpcPayload, isDomiciliated };
